@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <style>
+         .column-sidenav {
+             cursor: pointer;
+         }
+    </style>
+    <title>Column Matcher</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Column Matcher</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+                <a href="#" class="nav-link" id="columns_match_page_button">Column Match</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" id="values_match_page_button">Value Match</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" id="columns_output_page_button">Column Output</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" id="values_output_page_button">Value Output</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+    <div class="row" id="columns_match_page">
+        <div class="col-2"></div>
+        <div class="col-8">
+            
+            <h1>Columns Matching Page</h1>
+            <div id="match_column_form" class="row" align="center">
+                    <!-- origin columns -->
+                    <div class="col-6">
+                        <p>Origin Spreadsheet Columns:</p>
+                        {% for o_col in origin_columns %}
+                            <input type="radio" id="o_col" name="o_col" value="{{o_col}}">
+                            <label for="o_col">{{o_col}}</label><br>
+                        {% endfor %}
+                    </div>
+
+                    <br />
+
+                    <!-- correct columns -->
+                    <div class="col-6">
+                        <p>Correct Spreadsheet Columns:</p>
+                        {% for c_col in correct_columns %}
+                            <input type="radio" id="c_col" name="c_col" value="{{c_col}}">
+                            <label for="c_col">{{c_col}}</label><br>
+                        {% endfor %}
+                    </div>
+
+                    <a href="#" style="margin:auto;" class="btn btn-outline-success" id="match_columns">Match Columns</a>
+            </div>
+            
+        </div>
+        <div class="col-2"></div>
+    </div>
+    
+    <div class="row" id="values_match_page" style="display: none;">
+        <div class="col-2"></div>
+        <div class="col-8">
+            
+            <h1>Values Matching Page</h1>
+            <div class="row">
+                <div class="col-4">
+                    {% for c_col in correct_columns %}
+                        <a class="btn btn-outline-primary column-sidenav" id="{{loop.index0}}" data-id="{{c_col}}">{{c_col}}</a>
+                        <br /><br />
+                    {% endfor %}
+                </div>
+                
+                <div class="col-8">
+                    <div id="match_values_form" class="row" align="center">
+                        <!-- origin columns -->
+                        <div class="col-6" id="correct_match_values_form">
+                        </div>
+
+                        <br />
+
+                        <!-- correct columns -->
+                        <div class="col-6" id="origin_match_values_form">
+                        </div>
+                        
+                    </div>
+                    <a href="#" style="margin:auto;" class="btn btn-outline-success" id="match_values">Match Values</a>
+                </div>
+            </div>
+            
+        </div>
+        <div class="col-2"></div>
+    </div>
+
+    <div class="row" id="values_output_page" style="display: none;">
+        <div class="col-2"></div>
+        <div class="col-8">
+            
+            <h1>Values Output Page</h1>
+            <pre id="values_output"></pre>
+            
+        </div>
+        <div class="col-2"></div>
+    </div>
+
+    <div class="row" id="columns_output_page" style="display: none;">        
+        <div class="col-2"></div>
+        <div class="col-8">
+            <h1>Columns Output Page</h1>
+            <pre id="columns_output"></pre>
+
+        </div>
+        <div class="col-2"></div>
+    </div>
+
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  
+    <script>
+        $(document).ready(()=> {
+            // DATA SOURCE:
+            const correct_columns = {{correct_columns|safe}};
+            let correct_source = {{correct_datum|safe}};
+            let origin_source = {{origin_datum|safe}};
+            let current_colname;
+
+
+            // UTILITY FUNCTIONS:
+            function update_ui_live(data, ui) {
+                $(ui).html(JSON.stringify(data));
+            }
+
+            // NAVBAR BUTTONS:
+            $("#columns_match_page_button").click(() => {
+                $("#values_match_page").hide();
+                $("#values_output_page").hide();
+                $("#columns_output_page").hide();
+                $("#columns_match_page").show();
+            });
+            $("#values_match_page_button").click(() => {
+                $("#values_output_page").hide();
+                $("#columns_output_page").hide();
+                $("#columns_match_page").hide();
+                $("#values_match_page").show();
+            });
+            $("#columns_output_page_button").click(() => {
+                $("#values_match_page").hide();
+                $("#values_output_page").hide();
+                $("#columns_match_page").hide();
+                $("#columns_output_page").show();
+            });
+            $("#values_output_page_button").click(() => {
+                $("#values_match_page").hide();
+                $("#columns_output_page").hide();
+                $("#columns_match_page").hide();
+                $("#values_output_page").show();
+            });
+
+            // COLUMNS APPLICATION:
+            let columns_mapping = {};
+            $("#match_columns").click(() => {
+                    original = $('input[name=o_col]:checked', "#match_column_form").val();
+                    correct = $('input[name=c_col]:checked', "#match_column_form").val();
+                    columns_mapping[original] = correct;
+
+                    $('input[name=o_col]:checked', "#match_column_form").remove();
+                    $('input[name=c_col]:checked', "#match_column_form").remove();
+                    update_ui_live(columns_mapping, "#columns_output");
+            });
+
+            // VALUES APPLICATION:
+            let values_mapping = {};
+            for(var i=0; i<correct_columns.length; i++) {
+                values_mapping[correct_columns[i]] = {};
+            }
+            $("#match_values").click(() => {
+                original = $('input[name=o_value]:checked', "#origin_match_values_form").val();
+                correct = $('input[name=c_value]:checked', "#correct_match_values_form").val();
+                if(!(current_colname in values_mapping)) {
+                    values_mapping[current_colname] = {};
+                }
+                
+                values_mapping[current_colname][original] =correct;
+
+                $('input[name=o_value]:checked', "#match_value_form").remove();
+                update_ui_live(values_mapping, "#values_output");
+            });
+
+            $(".column-sidenav").click((e) => {
+                console.log(e.target.id);
+                current_colname = $("#" + e.target.id).attr("data-id");
+
+                $("#correct_match_values_form").empty();                
+                $("#origin_match_values_form").empty();
+
+                let reverse_mapping = {};
+                for(const key in columns_mapping) {
+                    reverse_mapping[columns_mapping[key]] = key
+                }
+                console.log("reverse_mapping: ");
+                console.log(reverse_mapping);
+                console.log("correct_source: ");
+                console.log(correct_source);
+                console.log("CURRENT COLNAME: ");
+                console.log(current_colname);
+
+                for(var i=0; i<correct_source[current_colname].length; i++) {
+                    $("#correct_match_values_form").append(`
+                        <input type="radio" id="c_value" name="c_value" value="${correct_source[current_colname][i]}">
+                        <label for="c_value">${correct_source[current_colname][i]}</label><br>
+                    `);
+                }
+                
+                if(current_colname in reverse_mapping) {
+                    origin_colname = reverse_mapping[current_colname];
+                    for(var i=0; i<origin_source[origin_colname].length; i++) {
+                        $("#origin_match_values_form").append(`
+                            <input type="radio" id="o_value" name="o_value" value="${origin_source[origin_colname][i]}">
+                            <label for="o_value">${origin_source[origin_colname][i]}</label><br>
+                        `);
+                    }
+                }
+                
+                
+            });
+
+
+        });
+    </script>
+  </body>
+</html>
